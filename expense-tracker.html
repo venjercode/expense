@@ -170,6 +170,8 @@ label.chk{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; co
 label.chk input{width:auto; min-width:0}
 
 /* ============ modal ============ */
+.charge .l1 input.day{flex:1 1 auto; min-width:0; font-size:13px; padding:6px 8px}
+.charge .l2 input, .charge .l2 select{min-width:0}
 .modal{position:fixed; inset:0; background:rgba(9,14,28,.5); z-index:100; display:none; align-items:flex-end; justify-content:center; padding:0}
 .modal.open{display:flex}
 @media(min-width:640px){.modal{align-items:center; padding:20px}}
@@ -348,7 +350,7 @@ a.btn{text-decoration:none}
     <!-- ===== CATEGORY MANAGER ===== -->
     <section class="card" id="catManCard">
       <h2>My categories <span class="sub">add, rename, re-type or delete</span></h2>
-      <div class="card-hint">This list is the dropdown you choose from when logging a charge. Add your fixed bills here first (rent, council tax, energy…) and flag them <b>Fixed</b> — then the app watches the £<span id="fixedTargetInline"></span> fixed-budget line for you.</div>
+      <div class="card-hint">This list is the dropdown you choose from when logging a charge. Add your fixed bills here (rent, council tax, energy…) and flag them <b>Fixed</b> — their monthly totals add themselves up in the grid, with no target to maintain.</div>
       <div class="catman" id="catMan"></div>
       <div class="row no-print" style="margin-top:12px">
         <button class="btn" id="btnAddCat2">+ Add category</button>
@@ -424,7 +426,6 @@ a.btn{text-decoration:none}
     <h2>Settings &amp; data</h2>
     <div class="row" style="margin-top:12px">
       <span class="field grow"><label for="setIncome">Monthly amount (default)</label><input id="setIncome" inputmode="decimal" style="max-width:200px"></span>
-      <span class="field grow"><label for="setFixed">Fixed amount (default)</label><input id="setFixed" inputmode="decimal" style="max-width:200px"></span>
       <span class="field"><label for="setCur">Currency</label><select id="setCur">
         <option value="GBP">£ GBP</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option>
         <option value="AED">AED</option><option value="SAR">SAR</option><option value="INR">₹ INR</option><option value="AUD">A$ AUD</option><option value="CAD">C$ CAD</option>
@@ -432,11 +433,12 @@ a.btn{text-decoration:none}
       <span class="field"><label for="setStart">Window starts</label><select id="setStart" style="min-width:150px"></select></span>
     </div>
 
-    <div class="card-hint" style="margin-top:10px">These two are the <b>defaults</b> — they apply to every month until you type something else for a particular month. Open <b>Month summary</b>, pick the month, and edit the two boxes there (or tap a <b>Monthly amount</b> / <b>Fixed amount</b> cell in the grid). Months with their own figures show an <b>own</b> tag.</div>
+    <div class="card-hint" style="margin-top:10px">The <b>Monthly amount</b> is the default for every month — open <b>Month summary</b>, pick a month, and change the box there (or tap a <b>Monthly amount</b> cell in the grid) to give just that month its own figure. Months with their own figure show an <b>own</b> tag. There's no fixed-bills target to maintain: log your bills as <b>Fixed</b> categories and the totals add themselves up.</div>
 
     <hr class="sep">
     <div class="row">
       <button class="btn" id="btnExportCsv">⤓ Export CSV (Excel / Sheets)</button>
+      <button class="btn" id="btnExportItems">⤓ Export charges with dates</button>
       <button class="btn" id="btnExportJson">⤓ Export backup (.json)</button>
       <button class="btn" id="btnImport">⤒ Import backup</button>
       <input type="file" id="fileImport" accept=".json,application/json" class="sr">
@@ -459,9 +461,10 @@ a.btn{text-decoration:none}
       <ul>
         <li><b>Spent</b> = everything marked Fixed + Variable. <b>Saved</b> = your Savings rows. They're kept apart so saving never looks like spending.</li>
         <li><b>Left over</b> = that month's Monthly amount − Spent − Saved. Green means you're inside your money, red means you've overshot.</li>
-        <li><b>Monthly amount</b> and <b>Fixed amount</b> start as one default each (Settings), but you can give any single month its own figures — edit the boxes in <b>Month summary</b> or tap a cell in those two rows of the grid. A month with its own numbers is tagged <b>own</b>, and there's an <b>↺ Use defaults</b> button to put it back.</li>
-        <li>The <b>Fixed total</b> row turns red for any month whose fixed bills beat that month's fixed amount.</li>
+        <li><b>Monthly amount</b> is one default (Settings) that every month uses — give a single month its own figure by editing the box in <b>Month summary</b> or tapping a <b>Monthly amount</b> cell in the grid. A month with its own number is tagged <b>own</b>, and <b>↺ Use default</b> puts it back.</li>
+        <li>Fixed bills have no target to maintain: whatever you log as a <b>Fixed</b> category is simply totalled per month in the <b>Fixed total</b> row.</li>
         <li><b>↻ Fill forward</b> copies each category's most recent amount into its empty months to the right — ideal for bills that repeat while still letting you edit the odd month (e.g. a higher winter energy bill).</li>
+        <li><b>Every charge carries its own date</b> — set it when you add the charge, or change it later inside the cell. Move a charge's date into another month and it follows you there. There's a <b>⤓ Export charges with dates</b> button that lists every charge line by line for spreadsheets.</li>
         <li><b>Every charge has its own dropdown</b>, so if you log something under the wrong category you can re-file it later without retyping the amount.</li>
       </ul>
     </details>
@@ -492,11 +495,12 @@ a.btn{text-decoration:none}
       <div id="cellTotals"></div>
       <div class="charges" id="cellList"></div>
       <div class="addrow">
-        <span class="field amt"><label for="newAmt">Amount (£)</label><input id="newAmt" inputmode="decimal" placeholder="0.00"></span>
+        <span class="field" style="flex:0 0 160px"><label for="newDate">Date</label><input id="newDate" type="date"></span>
+        <span class="field amt"><label for="newAmt">Amount</label><input id="newAmt" inputmode="decimal" placeholder="0.00"></span>
         <span class="field grow"><label for="newNote">Note (optional)</label><input id="newNote" type="text" placeholder="e.g. Tesco weekly shop"></span>
         <button class="btn primary" id="btnAddToCell">Add</button>
       </div>
-      <div class="card-hint">Type the amount and press Enter to add quickly. Editing an amount saves instantly.</div>
+      <div class="card-hint">Dates and amounts save as you type. Press Enter in the amount box to add quickly.</div>
     </div>
     <footer>
       <button class="btn danger" id="btnClearCell">Clear this cell</button>
@@ -510,18 +514,16 @@ a.btn{text-decoration:none}
   <div class="sheet">
     <header><h3 id="amountTitle">Amounts</h3><button class="x" data-close>✕</button></header>
     <div class="body">
-      <div class="card-hint" style="margin:0 0 12px">Set what this month gets. Anything you leave blank falls back to your defaults
-        (<b id="amountDefaults"></b>).</div>
+      <div class="card-hint" style="margin:0 0 12px">Leave it blank to use the default (<b id="amountDefaults"></b>).
+        Fixed bills are logged as categories now, so there is nothing else to set here.</div>
       <div class="row">
         <span class="field grow"><label for="amtIncome">Monthly amount</label>
           <input id="amtIncome" inputmode="decimal" autocomplete="off" placeholder="default"></span>
-        <span class="field grow"><label for="amtFixed">Fixed amount</label>
-          <input id="amtFixed" inputmode="decimal" autocomplete="off" placeholder="default"></span>
       </div>
       <div id="amountPreview" class="card-hint"></div>
     </div>
     <footer>
-      <button class="btn" id="btnAmountDefaults">↺ Use defaults</button>
+      <button class="btn" id="btnAmountDefaults">↺ Use default</button>
       <button class="btn primary" id="btnAmountSave">Save</button>
     </footer>
   </div>
@@ -580,6 +582,47 @@ const store = {
    2. dates + money
    ============================================================ */
 function monthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function ymd(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function daysInMonth(m){
+  const q = m.split('-').map(Number);
+  return new Date(q[0], q[1], 0).getDate();
+}
+/* the earliest and latest days the 12-month window can hold */
+function windowBounds(){
+  const ms = months();
+  return { min: ms[0] + '-01', max: ms[11] + '-' + String(daysInMonth(ms[11])).padStart(2,'0') };
+}
+function clampDate(value, fb){
+  const b = windowBounds();
+  const d = (/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) ? String(value) : fb;
+  if (d < b.min) return b.min;
+  if (d > b.max) return b.max;
+  return d;
+}
+/* the day a new charge should start on: today when it's that month, otherwise the 1st */
+function defaultDateFor(month){
+  const b = windowBounds();
+  if (month === TODAY){
+    const t = ymd(new Date());
+    return (t >= b.min && t <= b.max) ? t : clampDate(t, month + '-01');
+  }
+  return clampDate(month + '-01', b.min);
+}
+/* repeat a bill on the same day of the month (clamped for short months) */
+function sameDayInMonth(dateStr, month){
+  const day = Number(String(dateStr || '').slice(8, 10)) || 1;
+  return month + '-' + String(Math.min(day, daysInMonth(month))).padStart(2, '0');
+}
+function fmtDate(dateStr){
+  const q = String(dateStr || '').split('-').map(Number);
+  if (q.length !== 3 || !q[0]) return '';
+  return new Date(q[0], q[1]-1, q[2]).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+}
+function fmtDay(dateStr){
+  const q = String(dateStr || '').split('-').map(Number);
+  if (q.length !== 3 || !q[0]) return '';
+  return new Date(q[0], q[1]-1, q[2]).toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+}
 function addMonths(key, n){
   const p = key.split('-').map(Number);
   return monthKey(new Date(p[0], p[1]-1+n, 1));
@@ -626,9 +669,9 @@ const r2 = n => Math.round(n*100)/100;
 function defaultState(){
   return {
     v: 1,
-    settings: { income: 6500, fixedBudget: 2750, currency: 'GBP', startMonth: '2026-10', overrides: {} },
+    settings: { income: 6500, currency: 'GBP', startMonth: '2026-10', overrides: {} },
     categories: [],   // {id, name, type, recurring}
-    items: []         // {id, catId, month:'YYYY-MM', amount:Number, note:String, ts:Number}
+    items: []         // {id, catId, month:'YYYY-MM', date:'YYYY-MM-DD', amount:Number, note:String, ts:Number}
   };
 }
 let state = load();
@@ -641,6 +684,7 @@ function normalizeState(raw){
   const s = (raw && typeof raw === 'object') ? raw : {};
   const d = defaultState();
   s.settings = Object.assign({}, d.settings, s.settings || {});
+  delete s.settings.fixedBudget;                 // the fixed-amount target was retired: fixed bills live as categories now
   s.categories = Array.isArray(s.categories) ? s.categories : [];
   s.items = Array.isArray(s.items) ? s.items : [];
   s.categories.forEach((c, i) => {
@@ -650,8 +694,15 @@ function normalizeState(raw){
     if (typeof c.order !== 'number') c.order = i;
   });
     s.items = s.items.filter(i => i && i.month)
-                   .map(i => ({id: i.id || uid(), catId: i.catId, month: i.month, amount: r2(parseNum(i.amount)), note: i.note || '', ts: i.ts || Date.now()}));
-    // per-month amounts: { '2026-12': {income: 8000, fixedBudget: 3000} } — empty keys are dropped
+                   .map(function(i){
+                     const it = {id: i.id || uid(), catId: i.catId, month: i.month, amount: r2(parseNum(i.amount)), note: i.note || '', ts: i.ts || Date.now()};
+                     // older saves had no day — default to the 1st, and let a real date override the month
+                     const d = (typeof i.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(i.date)) ? i.date : (i.month + '-01');
+                     it.date = d;
+                     it.month = d.slice(0, 7);
+                     return it;
+                   });
+    // per-month amounts: { '2026-12': {income: 8000} } — empty keys are dropped
     const ov = (s.settings.overrides && typeof s.settings.overrides === 'object') ? s.settings.overrides : {};
     const clean = {};
     Object.keys(ov).forEach(function(k){
@@ -659,7 +710,6 @@ function normalizeState(raw){
       const e = ov[k] || {};
       const rec = {};
       if (e.income !== undefined && e.income !== null && e.income !== '') rec.income = r2(parseNum(e.income));
-      if (e.fixedBudget !== undefined && e.fixedBudget !== null && e.fixedBudget !== '') rec.fixedBudget = r2(parseNum(e.fixedBudget));
       if (Object.keys(rec).length) clean[k] = rec;
     });
     s.settings.overrides = clean;
@@ -689,11 +739,7 @@ function incomeFor(m){
   const o = monthOverride(m);
   return (o.income === undefined) ? state.settings.income : o.income;
 }
-function fixedBudgetFor(m){
-  const o = monthOverride(m);
-  return (o.fixedBudget === undefined) ? state.settings.fixedBudget : o.fixedBudget;
-}
-function isOverridden(m){ const o = monthOverride(m); return o.income !== undefined || o.fixedBudget !== undefined; }
+function isOverridden(m){ return monthOverride(m).income !== undefined; }
 function setMonthAmount(m, key, value){
   const ov = state.settings.overrides || (state.settings.overrides = {});
   const rec = ov[m] || (ov[m] = {});
@@ -727,7 +773,6 @@ function monthTotals(m){
     fixed: series.fixed, variable: series.variable, savings: series.savings,
     spent: spent, saved: series.savings,
     amount: income,
-    fixedAmount: fixedBudgetFor(m),
     left: r2(income - spent - series.savings),
     total: r2(spent + series.savings)
   };
@@ -767,36 +812,55 @@ function formHtml(prefix){
     if (!list.length) return;
     cats += '<optgroup label="'+t[1]+'">' + list.map(c => '<option value="'+c.id+'">'+esc(c.name)+'</option>').join('') + '</optgroup>';
   });
+  const b = windowBounds();
+  const startDate = defaultDateFor(focusMonth);
   return ''
-    + '<span class="field grow"><label for="'+prefix+'-month">Month</label><select id="'+prefix+'-month">'+opts+'</select></span>'
     + '<span class="field grow"><label for="'+prefix+'-cat">Category</label><select id="'+prefix+'-cat">'+(cats || '<option value="">— add a category first —</option>')+'</select></span>'
-    + '<span class="field" style="flex:0 0 132px"><label for="'+prefix+'-amt">Amount</label><input id="'+prefix+'-amt" inputmode="decimal" placeholder="0.00" autocomplete="off"></span>'
-    + '<span class="field grow" style="flex:1 1 150px"><label for="'+prefix+'-note">Note</label><input id="'+prefix+'-note" type="text" placeholder="optional" autocomplete="off"></span>'
+    + '<span class="field" style="flex:0 0 150px"><label for="'+prefix+'-date">Date of expense</label><input id="'+prefix+'-date" type="date" min="'+b.min+'" max="'+b.max+'" value="'+startDate+'"></span>'
+    + '<span class="field grow" style="flex:0 0 130px"><label for="'+prefix+'-month">Month</label><select id="'+prefix+'-month">'+opts+'</select></span>'
+    + '<span class="field" style="flex:0 0 120px"><label for="'+prefix+'-amt">Amount</label><input id="'+prefix+'-amt" inputmode="decimal" placeholder="0.00" autocomplete="off"></span>'
+    + '<span class="field grow" style="flex:1 1 130px"><label for="'+prefix+'-note">Note</label><input id="'+prefix+'-note" type="text" placeholder="optional" autocomplete="off"></span>'
     + '<button class="btn primary" id="'+prefix+'-go" type="button">Add charge</button>';
 }
 function wireForm(prefix){
   const amt = $('#'+prefix+'-amt'), note = $('#'+prefix+'-note');
+  const monthEl = $('#'+prefix+'-month'), dateEl = $('#'+prefix+'-date');
   function go(){
     const catId = $('#'+prefix+'-cat').value;
-    const month = $('#'+prefix+'-month').value;
+    const month = monthEl.value;
+    const date = clampDate(dateEl.value, defaultDateFor(month));
     const amount = r2(parseNum(amt.value));
     if (!catId){ toast('Add a category first, then the dropdown will fill up.'); return; }
     if (!amount){ amt.focus(); toast('Enter an amount'); return; }
-    addCharge(catId, month, amount, note.value.trim());
+    addCharge(catId, date.slice(0,7), amount, note.value.trim(), date);
     amt.value = ''; note.value = '';
     amt.focus();
   }
+  // month and date stay in step: month sets the day, a day moves the month
+  monthEl.addEventListener('change', function(){
+    dateEl.value = defaultDateFor(monthEl.value);
+  });
+  dateEl.addEventListener('change', function(){
+    const d = clampDate(dateEl.value, defaultDateFor(monthEl.value));
+    dateEl.value = d;
+    const m = d.slice(0, 7);
+    if ($$('#'+prefix+'-month option').some(function(o){ return o.value === m; })) monthEl.value = m;
+  });
   $('#'+prefix+'-go').addEventListener('click', go);
   [amt, note].forEach(function(el){
     el.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); go(); } });
   });
+  [dateEl].forEach(function(el){
+    el.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); go(); } });
+  });
 }
-function addCharge(catId, month, amount, note){
-  state.items.push({id: uid(), catId: catId, month: month, amount: r2(amount), note: note || '', ts: Date.now()});
-  focusMonth = month;
+function addCharge(catId, month, amount, note, date){
+  const day = clampDate(date, defaultDateFor(month));
+  state.items.push({id: uid(), catId: catId, month: day.slice(0, 7), date: day, amount: r2(amount), note: note || '', ts: Date.now()});
+  focusMonth = day.slice(0, 7);
   save(); renderAll();
   const c = catById(catId);
-  toast('Added ' + fmt2(amount) + ' to ' + (c ? c.name : 'category') + ' · ' + monthLong(month));
+  toast('Added ' + fmt2(amount) + ' to ' + (c ? c.name : 'category') + ' · ' + fmtDate(day));
 }
 
 /* ============================================================
@@ -811,13 +875,11 @@ function renderSumSelect(){
 function renderTiles(){
   const t = monthTotals(focusMonth);
   const inc = incomeFor(focusMonth);
-  const fb = fixedBudgetFor(focusMonth);
   const own = isOverridden(focusMonth);
   const pctSpent = inc > 0 ? Math.round(t.spent / inc * 100) : 0;
-  const pctFixed = fb > 0 ? Math.round(t.fixed / fb * 100) : 0;
   const tiles = [
     ['Monthly amount', fmt(inc), own ? 'set for ' + monthShort(focusMonth) : 'default, every month', ''],
-    ['Fixed bills', fmt(t.fixed), pctFixed + '% of the ' + fmt(fb) + ' fixed amount', 'hl'],
+    ['Fixed bills', fmt(t.fixed), t.spent ? Math.round(t.fixed/t.spent*100) + '% of spending' : 'nothing logged yet', 'hl'],
     ['Variable', fmt(t.variable), t.spent ? Math.round(t.variable/t.spent*100) + '% of spending' : '—', ''],
     ['Spent', fmt(t.spent), pctSpent + '% of the monthly amount', ''],
     ['Saved', fmt(t.saved), inc ? Math.round(t.saved/inc*100) + '% of the monthly amount' : '—', ''],
@@ -828,22 +890,16 @@ function renderTiles(){
   }).join('');
 
   $('#tiles').innerHTML += '<div class="tile" style="grid-column:1/-1; display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; background:#fbfcff">'
-    + '<span class="field" style="flex:0 0 170px"><label for="sumAmount">Monthly amount · ' + esc(monthLong(focusMonth)) + '</label>'
-    + '<input id="sumAmount" inputmode="decimal" value="' + esc(String(inc)) + '" style="max-width:170px"></span>'
-    + '<span class="field" style="flex:0 0 150px"><label for="sumFixed">Fixed amount · ' + esc(monthShort(focusMonth)) + '</label>'
-    + '<input id="sumFixed" inputmode="decimal" value="' + esc(String(fb)) + '" style="max-width:150px"></span>'
-    + (own ? '<button class="btn sm" id="sumReset" title="Go back to the defaults for this month">↺ Use defaults</button>'
-           : '<span class="mini-note">Editing these sets them for <b>' + esc(monthLong(focusMonth)) + '</b> only. Everything else keeps the defaults set below.</span>')
+    + '<span class="field" style="flex:0 0 190px"><label for="sumAmount">Monthly amount · ' + esc(monthLong(focusMonth)) + '</label>'
+    + '<input id="sumAmount" inputmode="decimal" value="' + esc(String(inc)) + '" style="max-width:190px"></span>'
+    + (own ? '<button class="btn sm" id="sumReset" title="Go back to the default for this month">↺ Use default</button>'
+           : '<span class="mini-note">Change this to give <b>' + esc(monthLong(focusMonth)) + '</b> its own monthly amount. Other months keep the default.</span>')
     + '</div>';
 
-  const sa = $('#sumAmount'), sf = $('#sumFixed');
+  const sa = $('#sumAmount');
   if (sa) sa.addEventListener('change', function(){
     setMonthAmount(focusMonth, 'income', this.value === '' ? null : this.value);
     save(); renderAll(); toast('Monthly amount for ' + monthLong(focusMonth) + ' set to ' + fmt(incomeFor(focusMonth)));
-  });
-  if (sf) sf.addEventListener('change', function(){
-    setMonthAmount(focusMonth, 'fixedBudget', this.value === '' ? null : this.value);
-    save(); renderAll(); toast('Fixed amount for ' + monthLong(focusMonth) + ' set to ' + fmt(fixedBudgetFor(focusMonth)));
   });
   const sr = $('#sumReset');
   if (sr) sr.addEventListener('click', function(){
@@ -851,13 +907,10 @@ function renderTiles(){
     save(); renderAll(); toast(monthLong(focusMonth) + ' is back on your defaults.');
   });
 
-  const over = fb > 0 && t.fixed > fb;
-  const diff = r2(fb - t.fixed);
-  $('#budgetNote').innerHTML = ''
-    + '<div class="bar" style="margin-top:14px"><i class="'+(over ? 'over' : 'good')+'" style="width:'+Math.min(100, Math.max(2, pctFixed))+'%"></i></div>'
-    + '<div class="card-hint">'+esc(monthLong(focusMonth))+' fixed bills: ' + fmt2(t.fixed) + ' of ' + fmt2(fb) + ' — '
-    + (over ? '<b class="neg">' + fmt2(Math.abs(diff)) + ' over the line</b>' : '<b class="pos">' + fmt2(diff) + ' still inside the line</b>')
-    + ' · day-to-day + savings left to allocate: ' + fmt2(Math.max(0, t.left)) + '</div>';
+  $('#budgetNote').innerHTML = '<div class="bar" style="margin-top:14px"><i class="' + (inc > 0 ? 'good' : '') + '" style="width:' + Math.min(100, Math.max(2, pctSpent)) + '%"></i></div>'
+    + '<div class="card-hint">' + esc(monthLong(focusMonth)) + ': fixed ' + fmt2(t.fixed) + ' · variable ' + fmt2(t.variable)
+    + ' · saved ' + fmt2(t.saved) + ' — <b>' + fmt2(t.spent) + '</b> of the ' + fmt2(inc) + ' monthly amount spent'
+    + ' · <b class="' + (t.left < 0 ? 'neg' : 'pos') + '">' + fmt2(t.left) + '</b> ' + (t.left < 0 ? 'over' : 'left over') + '</div>';
 }
 
 /* ============================================================
@@ -909,12 +962,10 @@ function renderGrid(){
       // subtotal row
       const series = ms.map(m => r2(list.reduce((a,c) => a + cellSum(c.id, m), 0)));
       const total = r2(series.reduce((a,x) => a+x, 0));
-      b += '<tr class="sub"><td class="name">'+(t[0]==='fixed' ? 'Fixed total (vs fixed amount)'
+      b += '<tr class="sub"><td class="name">'+(t[0]==='fixed' ? 'Fixed total'
               : t[0]==='variable' ? 'Variable total' : 'Going to savings')+'</td>';
       series.forEach(function(v, i){
-        const cap = fixedBudgetFor(ms[i]);
-        const over = t[0] === 'fixed' && cap > 0 && v > cap;
-        b += '<td class="num" style="'+(over ? 'color:var(--bad);background:#fff7f7' : '')+'">'+esc(fmt(v))+'</td>';
+        b += '<td class="num">'+esc(fmt(v))+'</td>';
       });
       b += '<td class="num tot"><b>'+esc(fmt0(total))+'</b></td></tr>';
     });
@@ -936,7 +987,7 @@ function renderGrid(){
       const v = ms12[i][getter];
       const own = monthOverride(m)[key] !== undefined;
       r += '<td class="num"><button class="cellbtn'+(own ? '' : ' plain')+'" data-amount="'+key+'" data-month="'+m+'"'
-         + ' title="' + esc('Set the ' + label.toLowerCase() + ' for ' + monthLong(m)) + (own ? ' — currently set just for this month' : '') + '">'
+         + ' title="' + esc('Set the monthly amount for ' + monthLong(m)) + (own ? ' — currently set just for this month' : '') + '">'
          + esc(fmt(v)) + (own ? '<span class="cnt">own</span>' : '') + '</button></td>';
     });
     r += '<td class="num tot"><b>'+esc(fmt0(sum(getter)))+'</b></td></tr>';
@@ -944,7 +995,6 @@ function renderGrid(){
   }
   let f = '';
   f += amountRow('Monthly amount', 'income', 'amount');
-  f += amountRow('Fixed amount', 'fixedBudget', 'fixedAmount');
   f += footRow('Spent (fixed + variable)', 'spent');
   f += footRow('Saved', 'saved');
   let lr = '<tr class="sub" style="background:#eef0ff"><td class="name">Left over</td>';
@@ -1132,14 +1182,21 @@ function fillForward(){
   const ms = months();
   let added = 0, total = 0;
   sortedCategories().forEach(function(c){
-    let last = 0, lastM = null;
+    let last = 0, lastM = null, lastDay = null;
     ms.forEach(function(m){
       const s = cellSum(c.id, m);
-      if (s > 0){ last = s; lastM = m; return; }
+      if (s > 0){
+        last = s; lastM = m;
+        const items = cellItems(c.id, m);
+        lastDay = items.length ? items[0].date : (m + '-01');
+        return;
+      }
       if (last > 0 && lastM){
-        state.items.push({id: uid(), catId: c.id, month: m, amount: last, note: 'carried forward from ' + monthShort(lastM), ts: Date.now()});
+        const day = sameDayInMonth(lastDay, m);
+        state.items.push({id: uid(), catId: c.id, month: m, date: day, amount: last, note: 'carried forward from ' + monthShort(lastM), ts: Date.now()});
         added++; total += last;
-        lastM = m; // keep carrying the same amount onwards
+        lastM = m;                      // keep carrying the same amount onwards
+        lastDay = day;
       }
     });
   });
@@ -1149,13 +1206,19 @@ function fillForward(){
 function fillRow(catId){
   const c = catById(catId); if (!c) return;
   const ms = months();
-  let last = 0, lastM = null, added = 0;
+  let last = 0, lastM = null, added = 0, lastDay = null;
   ms.forEach(function(m){
     const s = cellSum(c.id, m);
-    if (s > 0){ last = s; lastM = m; return; }
+    if (s > 0){
+      last = s; lastM = m;
+      const items = cellItems(c.id, m);
+      lastDay = items.length ? items[0].date : (m + '-01');
+      return;
+    }
     if (last > 0 && lastM){
-      state.items.push({id: uid(), catId: c.id, month: m, amount: last, note: 'carried forward from ' + monthShort(lastM), ts: Date.now()});
-      added++; lastM = m;
+      const day = sameDayInMonth(lastDay, m);
+      state.items.push({id: uid(), catId: c.id, month: m, date: day, amount: last, note: 'carried forward from ' + monthShort(lastM), ts: Date.now()});
+      added++; lastM = m; lastDay = day;
     }
   });
   save(); renderAll();
@@ -1181,27 +1244,20 @@ function openAmounts(month, focusKey){
   amountTarget = month;
   const o = monthOverride(month);
   $('#amountTitle').innerHTML = 'Amounts for ' + esc(monthLong(month));
-  $('#amountDefaults').textContent = fmt(incomeFor(month)) + ' monthly · ' + fmt(fixedBudgetFor(month)) + ' fixed';
+  $('#amountDefaults').textContent = fmt(state.settings.income);
   $('#amtIncome').placeholder = 'default ' + state.settings.income;
-  $('#amtFixed').placeholder = 'default ' + state.settings.fixedBudget;
   $('#amtIncome').value = (o.income === undefined) ? '' : String(o.income);
-  $('#amtFixed').value = (o.fixedBudget === undefined) ? '' : String(o.fixedBudget);
   amountPreview();
   openModal('#amountModal');
-  setTimeout(function(){
-    const el = $('#' + (focusKey === 'fixedBudget' ? 'amtFixed' : 'amtIncome'));
-    if (el) el.focus();
-  }, 60);
+  setTimeout(function(){ const el = $('#amtIncome'); if (el) el.focus(); }, 60);
 }
 function amountPreview(){
   if (!amountTarget) return;
   const i = $('#amtIncome').value === '' ? state.settings.income : parseNum($('#amtIncome').value);
-  const f = $('#amtFixed').value === '' ? state.settings.fixedBudget : parseNum($('#amtFixed').value);
   const spent = monthTotals(amountTarget);
   const left = r2(i - spent.spent - spent.saved);
   $('#amountPreview').innerHTML = 'With ' + fmt(i) + ' coming in this month and ' + fmt(spent.spent) + ' spent plus '
-    + fmt(spent.saved) + ' saved, you would have <b class="' + (left < 0 ? 'neg' : 'pos') + '">' + fmt(left) + '</b> left.'
-    + (f && spent.fixed > f ? ' Fixed bills are already <b class="neg">' + fmt(spent.fixed - f) + ' over</b> the fixed amount.' : '');
+    + fmt(spent.saved) + ' saved, you would have <b class="' + (left < 0 ? 'neg' : 'pos') + '">' + fmt(left) + '</b> left.';
 }
 
 let cellTarget = null;
@@ -1209,6 +1265,9 @@ function openCell(catId, month){
   const c = catById(catId); if (!c) return;
   cellTarget = {catId: catId, month: month};
   $('#cellTitle').innerHTML = esc(c.name) + ' <span class="mini-note" style="font-weight:500">· ' + esc(monthLong(month)) + '</span>';
+  const nb = windowBounds();
+  const nd = $('#newDate');
+  if (nd){ nd.min = nb.min; nd.max = nb.max; nd.value = defaultDateFor(month); }
   renderCell();
   openModal('#cellModal');
   setTimeout(function(){ const a = $('#newAmt'); if (a) a.focus(); }, 60);
@@ -1218,8 +1277,10 @@ function renderCellTotals(){
   const c = catById(cellTarget.catId); if (!c) return;
   const items = cellItems(c.id, cellTarget.month);
   const sum = r2(items.reduce((a,i) => a + i.amount, 0));
+  const byDate = items.slice().sort((a,b) => (a.date || '').localeCompare(b.date || '') || (a.ts - b.ts));
   const t = monthTotals(cellTarget.month);
   $('#cellTotals').innerHTML = '<div class="kv"><span>Charges in this cell</span><b>'+items.length+'</b></div>'
+    + '<div class="kv"><span>Dates</span><b>'+ (byDate.length ? esc(fmtDay(byDate[0].date)) + (byDate.length > 1 ? ' → ' + esc(fmtDay(byDate[byDate.length-1].date)) : '') : '—') + '</b></div>'
     + '<div class="kv"><span>Cell total</span><b>'+esc(fmt2(sum))+'</b></div>'
     + '<div class="kv"><span>' + TYPE_LABEL[c.type] + ' · month total so far</span><b>'+esc(fmt2(t[c.type]))+'</b></div>';
 }
@@ -1227,15 +1288,18 @@ function renderCell(){
   if (!cellTarget) return;
   const c = catById(cellTarget.catId);
   if (!c){ closeModal('#cellModal'); return; }
-  const items = cellItems(c.id, cellTarget.month).slice().sort((a,b) => a.ts - b.ts);
+  const items = cellItems(c.id, cellTarget.month).slice().sort((a,b) => (a.date || '').localeCompare(b.date || '') || (a.ts - b.ts));
   renderCellTotals();
   const list = $('#cellList');
   if (!items.length){
     list.innerHTML = '<div class="muted-empty">Nothing here yet — add the first charge below.</div>';
   } else {
+      const wb = windowBounds();
     list.innerHTML = items.map(function(i){
       return '<div class="charge" data-id="'+i.id+'">'
-        + '<div class="l1"><input class="amt" inputmode="decimal" value="'+esc(Number(i.amount).toFixed(2))+'" data-act="amt" aria-label="Amount"><button class="del" data-act="del" title="Delete charge">✕</button></div>'
+        + '<div class="l1"><input type="date" class="day" value="'+esc(i.date)+'" min="'+wb.min+'" max="'+wb.max+'" data-act="date" aria-label="Date of this charge">'
+        + '<input class="amt" inputmode="decimal" value="'+esc(Number(i.amount).toFixed(2))+'" data-act="amt" aria-label="Amount">'
+        + '<button class="del" data-act="del" title="Delete charge">✕</button></div>'
         + '<div class="l2"><select data-act="cat" aria-label="Move this charge to another category">'+catOptionsHtml(i.catId)+'</select>'
         + '<input type="text" value="'+esc(i.note || '')+'" placeholder="note" data-act="note" aria-label="Note"></div>'
         + '</div>';
@@ -1252,12 +1316,14 @@ function cellEdit(id, patch){
 }
 function cellAdd(){
   if (!cellTarget) return;
-  const amtEl = $('#newAmt'), noteEl = $('#newNote');
+  const amtEl = $('#newAmt'), noteEl = $('#newNote'), dateEl = $('#newDate');
   const amount = r2(parseNum(amtEl.value));
   if (!amount){ amtEl.focus(); return; }
-  state.items.push({id: uid(), catId: cellTarget.catId, month: cellTarget.month, amount: amount, note: noteEl.value.trim(), ts: Date.now()});
+  const day = clampDate(dateEl.value, defaultDateFor(cellTarget.month));
+  state.items.push({id: uid(), catId: cellTarget.catId, month: day.slice(0,7), date: day, amount: amount, note: noteEl.value.trim(), ts: Date.now()});
   amtEl.value = ''; noteEl.value = '';
   save(); renderAll(); renderCell();
+  if (!dateEl.value) dateEl.value = day;
   amtEl.focus();
 }
 
@@ -1321,7 +1387,6 @@ function csv(){
   const line = (label, get) => [label,''].concat(ms.map((m,i) => get(t[i], ms[i]))).concat([r2(ms.reduce((a,m,i) => a + get(t[i], ms[i]), 0))]);
   rows.push([]);
   rows.push(line('Monthly amount', x => x.amount));
-  rows.push(line('Fixed amount', x => x.fixedAmount));
   rows.push(line('Fixed total', x => x.fixed));
   rows.push(line('Variable total', x => x.variable));
   rows.push(line('Spent', x => x.spent));
@@ -1330,6 +1395,23 @@ function csv(){
   const q = v => {
     const s = String(v == null ? '' : v);
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  return '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n');
+}
+function itemsCsv(){
+  const rows = [['Date','Month','Category','Type','Amount','Note']];
+  const list = state.items.slice().sort(function(a, b){
+    return (a.date || '').localeCompare(b.date || '') || (a.ts - b.ts);
+  });
+  list.forEach(function(i){
+    const c = catById(i.catId);
+    rows.push([i.date || '', i.month, c ? c.name : '(deleted)', c ? TYPE_LABEL[c.type] : '', r2(i.amount), i.note || '']);
+  });
+  rows.push([]);
+  rows.push(['Total','','','', r2(list.reduce((a,i) => a + i.amount, 0)), list.length + ' charges']);
+  const q = v => {
+    const t = String(v == null ? '' : v);
+    return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
   };
   return '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n');
 }
@@ -1378,13 +1460,13 @@ function canonData(d){
   const cats = (d.categories || []).slice().sort((a, b) => String(a.id).localeCompare(String(b.id)))
     .map(c => [c.id, c.name, c.type, !!c.recurring, typeof c.order === 'number' ? c.order : 0]);
   const items = (d.items || []).slice().sort((a, b) => String(a.id).localeCompare(String(b.id)))
-    .map(i => [i.id, i.catId, i.month, Number(i.amount).toFixed(2), i.note || '']);
+    .map(i => [i.id, i.catId, i.month, i.date || '', Number(i.amount).toFixed(2), i.note || '']);
   const st = d.settings || {};
   const ov = st.overrides || {};
   const ovKeys = Object.keys(ov).sort();
   return JSON.stringify({
-    s: [st.income, st.fixedBudget, st.currency, st.startMonth],
-    o: ovKeys.map(k => [k, ov[k].income, ov[k].fixedBudget]),
+    s: [st.income, st.currency, st.startMonth],
+    o: ovKeys.map(k => [k, ov[k].income]),
     c: cats, i: items
   });
 }
@@ -1416,7 +1498,12 @@ function setSyncStatus(kind, detail){
   }
   const line = $('#cloudStatus');
   if (line){
-    if (!syncConfigured()){
+    if (kind === 'error'){
+      // a real problem always gets shown, even before a gist exists —
+      // otherwise a rejected/expired token looks like "not set up yet"
+      line.innerHTML = '<span class="err">' + esc(detail || 'Something needs your attention.') + '</span>'
+        + (syncConfigured() ? '' : ' <span class="mini-note">Nothing is lost — this device keeps saving locally until a working token is in place.</span>');
+    } else if (!syncConfigured()){
       line.innerHTML = 'Not connected. This device saves on its own; <b>connect a token below</b> and the same numbers follow you to every other device.';
     } else if (kind === 'conflict'){
       const r = conflictPending || {};
@@ -1435,8 +1522,6 @@ function setSyncStatus(kind, detail){
       line.innerHTML = '<span class="err"><b>Both copies changed since the last sync</b> — pick the one to keep, then the other is replaced.</span>' + rows
         + '<div class="mini-note">Nothing is deleted quietly: whichever copy you do not pick is parked and downloadable below.</div>';
       wireConflictButtons();
-    } else if (kind === 'error'){
-      line.innerHTML = '<span class="err">' + esc(detail || 'Something needs your attention.') + '</span>';
     } else {
       const t = syncCfg.lastSyncAt ? new Date(syncCfg.lastSyncAt).toLocaleString('en-GB') : 'not yet';
       line.innerHTML = 'Connected to your private gist. Last sync: <b>' + esc(t) + '</b> \u00b7 this device is <b>' + esc(syncCfg.device) + '</b>'
@@ -1731,8 +1816,8 @@ function rebuildForms(){
   // remember what the user had chosen so a rebuild doesn't jump the dropdown
   const keep = {};
   ['q','m'].forEach(function(p){
-    const c = $('#'+p+'-cat'), m = $('#'+p+'-month');
-    keep[p] = {cat: c ? c.value : '', month: m ? m.value : ''};
+    const c = $('#'+p+'-cat'), m = $('#'+p+'-month'), d = $('#'+p+'-date');
+    keep[p] = {cat: c ? c.value : '', month: m ? m.value : '', date: d ? d.value : ''};
   });
   $('#quickForm').innerHTML = formHtml('q');
   wireForm('q');
@@ -1742,9 +1827,13 @@ function rebuildForms(){
     const c = $('#'+p+'-cat'), m = $('#'+p+'-month');
     if (c && keep[p].cat && $$('#'+p+'-cat option').some(function(o){ return o.value === keep[p].cat; })) c.value = keep[p].cat;
     if (m && keep[p].month && $$('#'+p+'-month option').some(function(o){ return o.value === keep[p].month; })) m.value = keep[p].month;
+    // keep the day you were entering — logging three charges from the same shop shouldn't reset it
+    const d = $('#'+p+'-date');
+    const b = windowBounds();
+    if (d && keep[p].date && keep[p].date >= b.min && keep[p].date <= b.max) d.value = keep[p].date;
   });
   $('#quickHint').innerHTML = state.categories.length
-    ? 'Tip: the dropdown shows your categories grouped as Fixed / Variable / Savings. Log every charge as it happens — totals, comparisons and the fixed-budget line all update instantly.'
+    ? 'Tip: the dropdown shows your categories grouped as Fixed / Variable / Savings. Set the date as you log each charge \u2014 totals, the month grid and every comparison update instantly.'
     : 'Your dropdown is empty: head to <b>My categories</b> below and add your first one (rent is usually a good start).';
 }
 function renderAll(){
@@ -1758,12 +1847,10 @@ function renderAll(){
   // header pills + settings
   const ms = months();
   $('#windowPill').innerHTML = 'Window <b>' + esc(monthShort(ms[0]) + ' ' + monthYear(ms[0])) + ' → ' + esc(monthShort(ms[11]) + ' ' + monthYear(ms[11])) + '</b>';
-  $('#fixedTargetInline').textContent = Number(state.settings.fixedBudget).toLocaleString('en-GB');
-  const inc = $('#setIncome'), fx = $('#setFixed'), cur = $('#setCur'), st = $('#setStart');
+  const inc = $('#setIncome'), cur = $('#setCur'), st = $('#setStart');
   if (document.activeElement !== inc) inc.value = state.settings.income;
-  if (document.activeElement !== fx) fx.value = state.settings.fixedBudget;
   cur.value = state.settings.currency;
-  if (!st.options.length || document.activeElement === st || document.activeElement === inc || document.activeElement === fx){
+  if (!st.options.length || document.activeElement === st || document.activeElement === inc){
     // rebuild month options (startMonth ±24 months)
     const base = state.settings.startMonth;
     let opts = '';
@@ -1835,21 +1922,20 @@ function init(){
     if (e.target.id === 'btnAmountSave'){
       if (!amountTarget) return;
       setMonthAmount(amountTarget, 'income', $('#amtIncome').value.trim() === '' ? null : $('#amtIncome').value);
-      setMonthAmount(amountTarget, 'fixedBudget', $('#amtFixed').value.trim() === '' ? null : $('#amtFixed').value);
       const m = amountTarget;
       save(); renderAll();
-      toast(isOverridden(m) ? monthLong(m) + ': ' + fmt(incomeFor(m)) + ' monthly · ' + fmt(fixedBudgetFor(m)) + ' fixed'
-                            : monthLong(m) + ' is back on your defaults.');
+      toast(isOverridden(m) ? monthLong(m) + ': ' + fmt(incomeFor(m)) + ' monthly amount'
+                            : monthLong(m) + ' is back on the default.');
       closeModal('#amountModal');
     }
     if (e.target.id === 'btnAmountDefaults'){
       if (!amountTarget) return;
       clearMonthAmount(amountTarget);
-      $('#amtIncome').value = ''; $('#amtFixed').value = '';
+      $('#amtIncome').value = '';
       amountPreview();
     }
   });
-  ['amtIncome','amtFixed'].forEach(function(id){
+  ['amtIncome'].forEach(function(id){
     $('#'+id).addEventListener('input', amountPreview);
     $('#'+id).addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); $('#btnAmountSave').click(); } });
   });
@@ -1879,6 +1965,14 @@ function init(){
   });
   $('#cellList').addEventListener('change', function(e){
     const row = e.target.closest('.charge'); if (!row) return;
+    if (e.target.dataset.act === 'date'){
+      const it = state.items.find(i => i.id === row.dataset.id); if (!it) return;
+      const d = clampDate(e.target.value, it.date);
+      it.date = d; it.month = d.slice(0, 7);            // a new day can move the charge to another month
+      save(); renderAll(); renderCell();
+      toast('Date set to ' + fmtDate(d) + (it.month !== cellTarget.month ? ' \u2014 moved to ' + monthLong(it.month) : ''));
+      return;
+    }
     if (e.target.dataset.act === 'cat'){
       const it = state.items.find(i => i.id === row.dataset.id); if (!it) return;
       const from = catById(it.catId), to = catById(e.target.value);
@@ -1930,12 +2024,14 @@ function init(){
 
   // settings
   $('#setIncome').addEventListener('input', function(e){ state.settings.income = parseNum(e.target.value); save(); renderTiles(); renderGrid(); renderChart(); renderCatSummary(); });
-  $('#setFixed').addEventListener('input', function(e){ state.settings.fixedBudget = parseNum(e.target.value); save(); renderTiles(); renderGrid(); $('#fixedTargetInline').textContent = Number(state.settings.fixedBudget).toLocaleString('en-GB'); });
   $('#setCur').addEventListener('change', function(e){ state.settings.currency = e.target.value; save(); renderAll(); });
   $('#setStart').addEventListener('change', function(e){ state.settings.startMonth = e.target.value; save(); renderAll(); });
 
   // data buttons
   $('#btnExportCsv').addEventListener('click', function(){ download('expenses-' + months()[0] + '-to-' + months()[11] + '.csv', csv(), 'text/csv;charset=utf-8'); });
+  $('#btnExportItems').addEventListener('click', function(){
+    download('expense-charges-' + new Date().toISOString().slice(0,10) + '.csv', itemsCsv(), 'text/csv;charset=utf-8');
+  });
   $('#btnExportJson').addEventListener('click', function(){
     download('expenses-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(state, null, 2), 'application/json');
   });
@@ -1951,7 +2047,7 @@ function init(){
         state = incoming;
         state.settings = Object.assign({}, defaultState().settings, state.settings || {});
         state.categories.forEach(c => { if (!c.id) c.id = uid(); if (!TYPE_LABEL[c.type]) c.type = 'variable'; });
-        state.items = state.items.filter(i => i && i.month).map(i => ({id: i.id || uid(), catId: i.catId, month: i.month, amount: r2(parseNum(i.amount)), note: i.note || '', ts: i.ts || Date.now()}));
+        state.items = normalizeState(state).items;
         save(); renderAll();
         toast('Backup imported — ' + state.items.length + ' charges loaded.');
       } catch(err){
@@ -2001,5 +2097,5 @@ else init();
 
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a436a16e2d50467f',t:'MTc5MDgwNjk5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a436ca8ee829befa',t:'MTc5MDgwODY3NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

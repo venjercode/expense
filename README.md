@@ -8,14 +8,16 @@ between your phone and your computer.
 
 ## What it does
 
-- Log a charge in seconds: pick a category from your own dropdown, type the amount, press Enter.
+- Log a charge in seconds: pick a category, set the **date of expense**, type the amount, press Enter.
 - Every month of the year on one page, so months sit side by side and compare at a glance.
-- Tap any cell to see and edit the individual charges behind that month's total.
+- Tap any cell to see and edit the individual charges behind that month's total — each with its own **date**, amount, category and note.
 - Categories are yours: add, rename, re-type (Fixed / Variable / Savings), reorder or delete.
-- **Monthly amount** and **Fixed amount**: set one default each, then override any single month — the grid has editable rows for both, and months you've changed are tagged *own*.
+- **Monthly amount**: one default, overridable for any single month (those months are tagged *own*).
+- Fixed bills are just categories — no target to maintain. Log them and the monthly **Fixed total** row does the rest.
 - Month summary tiles, a 12-month trend chart, and a fixed-bills line that turns red in any month where you go over.
 - Savings are tracked separately from spending, so putting money aside never looks like an expense.
-- Export to CSV for Excel or Sheets, and export/import a JSON backup.
+- Moving a charge's date into another month moves the charge with it; **Fill forward** repeats a bill on the same day each month.
+- Export to CSV for Excel or Sheets (monthly grid, or every charge line by line with dates), and export/import a JSON backup.
 
 ## Sync between devices
 
